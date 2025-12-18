@@ -431,6 +431,7 @@ void CBacktrack::Draw(CTFPlayer* pLocal)
 	const int nTall = fFont.m_nTall + H::Draw.Scale(1);
 
 	EAlign align = ALIGN_TOP;
+	/*
 	if (x <= 100 + H::Draw.Scale(50, Scale_Round))
 	{
 		x -= H::Draw.Scale(42, Scale_Round);
@@ -441,6 +442,7 @@ void CBacktrack::Draw(CTFPlayer* pLocal)
 		x += H::Draw.Scale(42, Scale_Round);
 		align = ALIGN_TOPRIGHT;
 	}
+	*/
 
     if (flFake || Vars::Backtrack::Interp.Value > G::Lerp * 1000)
         H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Real {:.0f} (+{:.0f}) ms", flLatency, flFake).c_str());
