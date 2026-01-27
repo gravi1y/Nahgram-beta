@@ -12,6 +12,7 @@ private:
 	void AntiAFK(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void InstantRespawnMVM(CTFPlayer* pLocal);
 	void NoisemakerSpam(CTFPlayer* pLocal);
+    void AutoFaN(CUserCmd* pCmd);
 
 	void CheatsBypass();
 	void WeaponSway();
