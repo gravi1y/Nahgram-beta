@@ -559,6 +559,149 @@ void CMisc::PingReducer()
 	}
 }
 
+// Auto Force-A-Nature (FaN) - Automatically shoots when double jumping as Scout
+void CMisc::AutoFaN(CUserCmd* pCmd)
+{
+	// Reset FaN running flag at start of each tick
+	m_bFaNRunning = false;
+	
+	// Check if key is bound and pressed
+	if (!H::Input->IsDown(CFG::Misc_AutoFaN_Key))
+		return;
+	
+	const auto pLocal = H::Entities->GetLocal();
+	const auto pWeapon = H::Entities->GetWeapon();
+
+	if (!pLocal || !pWeapon)
+		return;
+
+	if (pLocal->deadflag())
+		return;
+
+	// Must be Scout
+	if (pLocal->m_iClass() != TF_CLASS_SCOUT)
+		return;
+
+	// Must be Force-A-Nature (item definition index 45)
+	if (pWeapon->m_iItemDefinitionIndex() != 45)
+		return;
+
+	// Must have ammo
+	if (!G::bCanPrimaryAttack)
+		return;
+
+	// Don't override manual shooting
+	if (pCmd->buttons & IN_ATTACK)
+		return;
+
+	// CRITICAL: Only work when on ground
+	const bool bIsOnGround = pLocal->m_fFlags() & FL_ONGROUND;
+	if (!bIsOnGround)
+		return;
+
+	// Check velocity - must be at least 360 units/sec
+	const Vec3 vVelocity = pLocal->m_vecVelocity();
+	const float flSpeed = sqrtf(vVelocity.x * vVelocity.x + vVelocity.y * vVelocity.y);
+	
+	if (flSpeed < 360.0f)
+		return;
+
+	// Check if user is pressing movement keys
+	const bool bForward = pCmd->buttons & IN_FORWARD;
+	const bool bBack = pCmd->buttons & IN_BACK;
+	const bool bLeft = pCmd->buttons & IN_MOVELEFT;
+	const bool bRight = pCmd->buttons & IN_MOVERIGHT;
+	
+	// Must have movement input
+	if (!bForward && !bBack && !bLeft && !bRight)
+		return;
+
+	// Calculate yaw offset based on movement direction
+	float flYawOffset = 0.0f;
+
+	if (bForward && !bBack && !bLeft && !bRight)
+	{
+		// W - Forward: Shoot forward (0 degrees)
+		flYawOffset = 0.0f;
+	}
+	else if (bBack && !bForward && !bLeft && !bRight)
+	{
+		// S - Backward: Shoot backward (180 degrees)
+		flYawOffset = 180.0f;
+	}
+	else if (bLeft && !bRight && !bForward && !bBack)
+	{
+		// A - Left: Shoot RIGHT (90 degrees)
+		flYawOffset = 90.0f;
+	}
+	else if (bRight && !bLeft && !bForward && !bBack)
+	{
+		// D - Right: Shoot LEFT (-90 degrees)
+		flYawOffset = -90.0f;
+	}
+	else if (bForward && bLeft && !bBack && !bRight)
+	{
+		// W+A - Forward-Left: Shoot forward-right (45 degrees)
+		flYawOffset = 45.0f;
+	}
+	else if (bForward && bRight && !bBack && !bLeft)
+	{
+		// W+D - Forward-Right: Shoot forward-left (-45 degrees)
+		flYawOffset = -45.0f;
+	}
+	else if (bBack && bLeft && !bForward && !bRight)
+	{
+		// S+A - Back-Left: Shoot back-right (135 degrees)
+		flYawOffset = 135.0f;
+	}
+	else if (bBack && bRight && !bForward && !bLeft)
+	{
+		// S+D - Back-Right: Shoot back-left (-135 degrees)
+		flYawOffset = -135.0f;
+	}
+	else
+	{
+		// Complex movement combination - don't execute
+		return;
+	}
+
+	Vec3 vShootAngles = pCmd->viewangles;
+
+	// Adjust pitch based on movement speed (looking DOWN to shoot at feet)
+	if (flSpeed < 100.0f)
+		vShootAngles.x = 60.0f;
+	else if (flSpeed < 200.0f)
+		vShootAngles.x = 75.0f;
+	else if (flSpeed < 300.0f)
+		vShootAngles.x = 60.0f;
+	else if (flSpeed < 400.0f)
+		vShootAngles.x = 45.0f;
+	else if (flSpeed < 500.0f)
+		vShootAngles.x = 30.0f;
+	else
+		vShootAngles.x = 15.0f;
+
+	// Apply yaw offset to shoot in the direction of movement
+	vShootAngles.y += flYawOffset;
+
+	// Normalize yaw to -180 to 180 range
+	while (vShootAngles.y > 180.0f)
+		vShootAngles.y -= 360.0f;
+	while (vShootAngles.y < -180.0f)
+		vShootAngles.y += 360.0f;
+
+	// Mark FaN as running so AntiCheatCompat and other features skip this tick
+	m_bFaNRunning = true;
+	
+	// Execute the FaN jump
+	pCmd->buttons |= IN_JUMP;
+	
+	// Set silent angles to prevent view from snapping (same as rocket jump)
+	G::bSilentAngles = true;
+	pCmd->viewangles = vShootAngles;
+	pCmd->buttons |= IN_ATTACK;
+}
+
 void CMisc::UnlockAchievements()
 {
 	const auto pAchievementMgr = U::Memory.CallVirtual<114, IAchievementMgr*>(I::EngineClient);
