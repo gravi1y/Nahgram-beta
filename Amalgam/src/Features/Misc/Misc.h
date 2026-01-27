@@ -23,10 +23,16 @@ private:
 	void AutoPeek(CTFPlayer* pLocal, CUserCmd* pCmd, bool bPost = false);
 	void EdgeJump(CTFPlayer* pLocal, CUserCmd* pCmd, bool bPost = false);
 
+     // Check if auto FaN is currently running
+	bool IsAutoFaNRunning() const { return m_bFaNRunning; }
+
 	bool m_bPeekPlaced = false;
 	Vec3 m_vPeekReturnPos = {};
 
 	//bool bSteamCleared = false;
+
+    // Check if auto FaN is currently running
+	bool IsAutoFaNRunning() const { return m_bFaNRunning; }
 
 public:
 	void RunPre(CTFPlayer* pLocal, CUserCmd* pCmd);
