@@ -1,3 +1,16 @@
+#include "Menu.h"
+
+#include "Components.h"
+#include "../../Configs/Configs.h"
+#include "../../Binds/Binds.h"
+#include "../../Visuals/Groups/Groups.h"
+#include "../../Players/PlayerUtils.h"
+#include "../../Spectate/Spectate.h"
+#include "../../Resolver/Resolver.h"
+#include "../../Visuals/Visuals.h"
+#include "../../Misc/Misc.h"
+#include "../../Output/Output.h"
+
 void CMenu::DrawMenu()
 {
     using namespace ImGui;
