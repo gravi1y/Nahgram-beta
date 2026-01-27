@@ -156,5 +156,5 @@ void CCore::Unload()
 		return;
 	}
 
-	SDK::Output("Nahgram", "Unloaded", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_DEBUG);
+	SDK::Output("Nahgram", "Unload", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_DEBUG);
 }
