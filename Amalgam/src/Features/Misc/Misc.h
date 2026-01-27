@@ -31,8 +31,6 @@ private:
 
 	//bool bSteamCleared = false;
 
-    // Check if auto FaN is currently running
-	bool IsAutoFaNRunning() const { return m_bFaNRunning; }
 
 public:
 	void RunPre(CTFPlayer* pLocal, CUserCmd* pCmd);
