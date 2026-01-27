@@ -140,6 +140,8 @@ std::string SDK::ConvertWideToUTF8(const std::wstring& source)
 	return result;
 }
 
+
+
 double SDK::PlatFloatTime()
 {
 	static auto Plat_FloatTime = U::Memory.GetModuleExport<double(*)()>("tier0.dll", "Plat_FloatTime");
@@ -810,4 +812,9 @@ void SDK::GetProjectileFireSetup(CTFPlayer* pPlayer, const Vec3& vAngIn, Vec3 vO
 
 		vAngOut = Math::VectorAngles(vEndPos - vPosOut);
 	}
+}
+
+bool SDK::CleanScreenshot()
+{
+	return Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 }

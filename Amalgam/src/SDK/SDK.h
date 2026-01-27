@@ -21,6 +21,9 @@
 #include "../Utils/Macros/Macros.h"
 #include <intrin.h>
 
+#define DEFAULT_COLOR		Color_t(175, 150, 255, 255)
+#define ALTERNATE_COLOR		Color_t(175, 150, 255, 127)
+
 #define VK_0              0x30
 #define VK_1              0x31
 #define VK_2              0x32
@@ -129,4 +132,6 @@ namespace SDK
 	void WalkTo(CUserCmd* pCmd, CTFPlayer* pLocal, Vec3& vTo, float flScale = 1.f);
 
 	void GetProjectileFireSetup(CTFPlayer* pPlayer, const Vec3& vAngIn, Vec3 vOffset, Vec3& vPosOut, Vec3& vAngOut, bool bPipes = false, bool bInterp = false, bool bAllowFlip = true);
+
+	bool CleanScreenshot();
 }

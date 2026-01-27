@@ -103,7 +103,7 @@ void CCore::Load()
 
 	F::Configs.LoadConfig(F::Configs.m_sCurrentConfig, false);
 
-	SDK::Output("Amalgam", "Loaded", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+	SDK::Output("Amalgam", "Loaded", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
 }
 
 void CCore::Loop()
@@ -156,5 +156,5 @@ void CCore::Unload()
 		return;
 	}
 
-	SDK::Output("Amalgam", "Unloaded", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG);
+	SDK::Output("Amalgam", "Unloaded", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_DEBUG);
 }

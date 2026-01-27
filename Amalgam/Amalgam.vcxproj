@@ -911,6 +911,7 @@
     <ClCompile Include="src\Features\Aimbot\AimbotHitscan\WarpPrediction\WarpPrediction.cpp" />
     <ClCompile Include="src\Features\Aimbot\AimbotMelee\AimbotMelee.cpp" />
     <ClCompile Include="src\Features\Aimbot\AimbotProjectile\AimbotProjectile.cpp" />
+    <ClCompile Include="src\Features\Aimbot\AimbotProjectile\SeamFinder\SeamFinder.cpp" />
     <ClCompile Include="src\Features\Aimbot\AutoAirblast\AutoAirblast.cpp" />
     <ClCompile Include="src\Features\Aimbot\AutoDetonate\AutoDetonate.cpp" />
     <ClCompile Include="src\Features\Aimbot\AutoRocketJump\AutoRocketJump.cpp" />
@@ -966,6 +967,7 @@
     <ClCompile Include="src\Hooks\CBaseEntity_EstimateAbsVelocity.cpp" />
     <ClCompile Include="src\Hooks\CBasePlayer_CalcObserverView.cpp" />
     <ClCompile Include="src\Hooks\CInput_ValidateUserCmd.cpp" />
+    <ClCompile Include="src\Hooks\CTFPlayerShared_ShouldSuppressPrediction.cpp" />
     <ClCompile Include="src\Hooks\CTFRocketLauncher_CheckReloadMisfire.cpp" />
     <ClCompile Include="src\Hooks\CTFPlayer_FireBullet.cpp" />
     <ClCompile Include="src\Hooks\CBaseEntity_ResetLatched.cpp" />
@@ -1023,7 +1025,6 @@
     <ClCompile Include="src\Hooks\CTFPlayer_DoAnimationEvent.cpp" />
     <ClCompile Include="src\Hooks\CTFPlayer_IsPlayerClass.cpp" />
     <ClCompile Include="src\Hooks\CTFPlayer_ShouldDraw.cpp" />
-    <ClCompile Include="src\Hooks\CTFPlayer_UpdateStepSound.cpp" />
     <ClCompile Include="src\Hooks\CTFRagdoll_CreateTFRagdoll.cpp" />
     <ClCompile Include="src\Hooks\CTFWeaponBase_CalcIsAttackCritical.cpp" />
     <ClCompile Include="src\Hooks\CTFWeaponBase_GetShootSound.cpp" />
@@ -1052,7 +1053,6 @@
     <ClCompile Include="src\Hooks\ISteamNetworkingUtils_GetPingToDataCenter.cpp" />
     <ClCompile Include="src\Hooks\IVModelRender_DrawModelExecute.cpp" />
     <ClCompile Include="src\Hooks\IVModelRender_ForcedMaterialOverride.cpp" />
-    <ClCompile Include="src\Hooks\KeyValues_SetInt.cpp" />
     <ClCompile Include="src\Hooks\NotificationQueue_Add.cpp" />
     <ClCompile Include="src\Hooks\RecvProxy_SimulationTime.cpp" />
     <ClCompile Include="src\Hooks\R_DrawSkyBox.cpp" />
@@ -1214,6 +1214,7 @@
     <ClInclude Include="src\Features\Aimbot\AimbotHitscan\AimbotHitscan.h" />
     <ClInclude Include="src\Features\Aimbot\AimbotMelee\AimbotMelee.h" />
     <ClInclude Include="src\Features\Aimbot\AimbotProjectile\AimbotProjectile.h" />
+    <ClInclude Include="src\Features\Aimbot\AimbotProjectile\SeamFinder\SeamFinder.h" />
     <ClInclude Include="src\Features\Aimbot\AutoAirblast\AutoAirblast.h" />
     <ClInclude Include="src\Features\Aimbot\AutoDetonate\AutoDetonate.h" />
     <ClInclude Include="src\Features\Aimbot\AutoRocketJump\AutoRocketJump.h" />
