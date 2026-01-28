@@ -88,7 +88,7 @@ void CMenu::DrawMenu()
         PushFont(F::Render.FontBold);
         FTabs(
             {
-                { "AIMBOT", "GENERAL", "HVH" },
+                { "AIMBOT", "GENERAL", "DRAW" },
                 { "VISUALS", "ESP", "MISC##", "MENU" },
                 { "MISC", "EXPLOIT", "OTHER" },
                 { "LOGS", "PLAYERLIST", "SETTINGS##", "OUTPUT" },
@@ -1051,6 +1051,7 @@ void CMenu::MenuMisc(int iTab)
 					FToggle(Vars::Misc::Movement::MovementLock, FToggleEnum::Right);
 					FToggle(Vars::Misc::Movement::BreakJump, FToggleEnum::Left);
 					FToggle(Vars::Misc::Movement::ShieldTurnRate, FToggleEnum::Right);
+					FToggle(Vars::Misc::Movement::AutoFaN, FToggleEnum::Left);
 				} EndSection();
 				if (Vars::Debug::Options.Value)
 				{
