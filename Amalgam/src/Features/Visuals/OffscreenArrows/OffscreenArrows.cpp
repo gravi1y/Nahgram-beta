@@ -4,51 +4,99 @@
 
 void COffscreenArrows::DrawArrowTo(const Vec3& vFromPos, const Vec3& vToPos, Color_t tColor, int iOffset, float flMaxDistance)
 {
-	float flMap = Math::RemapVal(vFromPos.DistTo(vToPos), flMaxDistance, flMaxDistance * 0.9f, 0.f, 1.f);
-	tColor.a = byte(flMap * 255.f);
+	const float flDist = vFromPos.DistTo(vToPos);
+
+	// base fade
+	float flFade = Math::RemapVal(
+		flDist,
+		flMaxDistance,
+		flMaxDistance * 0.9f,
+		0.f,
+		1.f
+	);
+	flFade = std::clamp(flFade, 0.f, 1.f);
+
+	// start flashing when closer
+	const float flFlashStart = flMaxDistance * 0.6f;
+
+	float flFlash = 0.f;
+	if (flDist < flFlashStart)
+	{
+		float flTime = SDK::PlatFloatTime();
+
+		float flSpeed = Math::RemapVal(
+			flDist,
+			flFlashStart,
+			flFlashStart * 0.25f,
+			6.f,
+			28.f
+		);
+		flSpeed = std::clamp(flSpeed, 6.f, 28.f);
+
+		flFlash = sinf(flTime * flSpeed) * 0.5f + 0.5f;
+	}
+
+	// blend color to black
+	tColor.r = byte(Math::Lerp(float(tColor.r), 0.f, flFlash));
+	tColor.g = byte(Math::Lerp(float(tColor.g), 0.f, flFlash));
+	tColor.b = byte(Math::Lerp(float(tColor.b), 0.f, flFlash));
+	tColor.a = byte(flFade * 255.f);
+
 	if (!tColor.a)
 		return;
 
-	Vec2 vCenter = { H::Draw.m_nScreenW / 2.f, H::Draw.m_nScreenH / 2.f };
-	Vec3 vScreen;
-	if (SDK::W2S(vToPos, vScreen, true))
+	Vec2 vCenter =
 	{
-		float flMin = std::min(vCenter.x, vCenter.y), flMax = std::max(vCenter.x, vCenter.y);
-		float flDist = sqrt(powf(vScreen.x - vCenter.x, 2) + powf(vScreen.y - vCenter.y, 2));
-		tColor.a *= std::clamp((flDist - flMin) / (flMin != flMax ? flMax - flMin : 1), 0.f, 1.f);
-		if (!tColor.a)
-			return;
-	}
+		H::Draw.m_nScreenW * 0.5f,
+		H::Draw.m_nScreenH * 0.5f
+	};
 
-	Vec3 vAngle = Math::VectorAngles({ vCenter.x - vScreen.x, vCenter.y - vScreen.y, 0 });
-	const float flDeg = DEG2RAD(vAngle.y);
-	const float flCos = cos(flDeg);
-	const float flSin = sin(flDeg);
+	Vec3 vScreen{};
+	SDK::W2S(vToPos, vScreen, true);
 
-	float flOffset = -iOffset;
-	float flScale = H::Draw.Scale(25);
-
-	Vec2 vPos = { flOffset * flCos, flOffset * flSin };
-	if (fabs(vPos.x) > vCenter.x - flScale || fabs(vPos.y) > vCenter.y - flScale)
-	{
-		Vec2 a = { -(vCenter.x - flScale) / vPos.x, -(vCenter.y - flScale) / vPos.y };
-		Vec2 b = { (vCenter.x - flScale) / vPos.x, (vCenter.y - flScale) / vPos.y };
-		Vec2 c = { std::min(a.x, b.x), std::min(a.y, b.y) };
-		vPos *= fabsf(std::max(c.x, c.y));
-	}
-	vPos += vCenter;
-
-	Vec2 v1 = { 0, flScale / 2 },
-		v2 = { 0, -flScale / 2 },
-		v3 = { -flScale * sqrt(3.f) / 2, 0 };
-	H::Draw.FillPolygon(
+	Vec3 vAngle = Math::VectorAngles(
 		{
-			{ { vPos.x + v1.x * flCos - v1.y * flSin, vPos.y + v1.y * flCos + v1.x * flSin } },
-			{ { vPos.x + v2.x * flCos - v2.y * flSin, vPos.y + v2.y * flCos + v2.x * flSin } },
-			{ { vPos.x + v3.x * flCos - v3.y * flSin, vPos.y + v3.y * flCos + v3.x * flSin } }
-		}, tColor
-	);
+			vScreen.x - vCenter.x,
+			vScreen.y - vCenter.y,
+			0.f
+		});
+
+	const float flRad = DEG2RAD(vAngle.y);
+	const float flRadius = float(iOffset);
+	const float flArc = DEG2RAD(42.f);
+	const float flThickness = H::Draw.Scale(4.f);
+
+	const int iSegments = 24;
+	const float a0 = flRad - flArc * 0.5f;
+	const float a1 = flRad + flArc * 0.5f;
+
+	for (int i = 0; i < iSegments; i++)
+	{
+		float t0 = float(i) / iSegments;
+		float t1 = float(i + 1) / iSegments;
+
+		float ang0 = a0 + (a1 - a0) * t0;
+		float ang1 = a0 + (a1 - a0) * t1;
+
+		Vec2 o0 = { cosf(ang0), sinf(ang0) };
+		Vec2 o1 = { cosf(ang1), sinf(ang1) };
+
+		Vec2 p0 = vCenter + o0 * (flRadius - flThickness);
+		Vec2 p1 = vCenter + o0 * (flRadius + flThickness);
+		Vec2 p2 = vCenter + o1 * (flRadius + flThickness);
+		Vec2 p3 = vCenter + o1 * (flRadius - flThickness);
+
+		H::Draw.FillPolygon(
+			{
+				{ p0 },
+				{ p1 },
+				{ p2 },
+				{ p3 }
+			},
+			tColor);
+	}
 }
+
 
 void COffscreenArrows::Store(CTFPlayer* pLocal)
 {

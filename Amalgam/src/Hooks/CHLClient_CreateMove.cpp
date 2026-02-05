@@ -57,7 +57,7 @@ static inline void UpdateInfo(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCm
 		int iNewItemDefinitionIndex = iStaticItemDefinitionIndex = pWeapon->m_iItemDefinitionIndex();
 
 		if (iNewItemDefinitionIndex != iOldItemDefinitionIndex || !bCanAttack || !pWeapon->m_iClip1())
-			F::Ticks.m_iWait = 1;
+			F::Ticks.m_iWait = -1;
 	}
 	if (bCanAttack)
 	{
@@ -249,21 +249,21 @@ MAKE_HOOK(CHLClient_CreateMove, U::Memory.GetVirtual(I::Client, 21), void,
 	I::Prediction->Update(I::ClientState->m_nDeltaTick, I::ClientState->m_nDeltaTick > 0, I::ClientState->last_command_ack, I::ClientState->lastoutgoingcommand + I::ClientState->chokedcommands);
 
 	UpdateInfo(pLocal, pWeapon, pCmd);
-		F::Spectate.CreateMove(pCmd);
-		F::Backtrack.CreateMove(pLocal, pWeapon, pCmd);
-		F::Misc.RunPre(pLocal, pCmd);
+	F::Spectate.CreateMove(pCmd);
+	F::Backtrack.CreateMove(pLocal, pWeapon, pCmd);
+	F::Misc.RunPre(pLocal, pCmd);
 	F::Ticks.Start(pLocal, pCmd);
-		F::Aimbot.Run(pLocal, pWeapon, pCmd);
+	F::Aimbot.Run(pLocal, pWeapon, pCmd);
 	F::Ticks.End(pLocal, pCmd);
-		F::CritHack.Run(pLocal, pWeapon, pCmd);
-		F::NoSpread.Run(pLocal, pWeapon, pCmd);
-		F::Resolver.CreateMove(pLocal);
-		F::Misc.RunPost(pLocal, pCmd, *pSendPacket);
-		F::PacketManip.Run(pLocal, pWeapon, pCmd, pSendPacket);
-		F::Visuals.CreateMove(pLocal, pWeapon);
-		F::Ticks.CreateMove(pLocal, pWeapon, pCmd, pSendPacket);
-		F::AntiAim.Run(pLocal, pWeapon, pCmd, *pSendPacket);
-		F::NoSpreadHitscan.AskForPlayerPerf();
+	F::CritHack.Run(pLocal, pWeapon, pCmd);
+	F::NoSpread.Run(pLocal, pWeapon, pCmd);
+	F::Resolver.CreateMove(pLocal);
+	F::Misc.RunPost(pLocal, pCmd);
+	F::PacketManip.Run(pLocal, pWeapon, pCmd, pSendPacket);
+	F::Visuals.CreateMove(pLocal, pWeapon);
+	F::Ticks.CreateMove(pLocal, pWeapon, pCmd, pSendPacket);
+	F::AntiAim.Run(pLocal, pWeapon, pCmd, *pSendPacket);
+	F::NoSpreadHitscan.AskForPlayerPerf();
 	F::EnginePrediction.End(pLocal, pCmd);
 
 	AntiCheatCompatibility(pCmd, pSendPacket);

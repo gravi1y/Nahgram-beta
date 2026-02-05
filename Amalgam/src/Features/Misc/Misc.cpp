@@ -12,13 +12,15 @@ void CMisc::RunPre(CTFPlayer* pLocal, CUserCmd* pCmd)
 	AntiAFK(pLocal, pCmd);
 	InstantRespawnMVM(pLocal);
 	NoisemakerSpam(pLocal);
-
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->m_MoveType() != MOVETYPE_WALK || pLocal->IsSwimming()
-		|| pLocal->IsTaunting() || pLocal->InCond(TF_COND_HALLOWEEN_KART) || pLocal->InCond(TF_COND_SHIELD_CHARGE))
+		|| pLocal->IsTaunting() || pLocal->InCond(TF_COND_SHIELD_CHARGE))
 		return;
 
 	AutoJump(pLocal, pCmd);
 	EdgeJump(pLocal, pCmd);
+	if (pLocal->InCond(TF_COND_HALLOWEEN_KART))
+		return;
+
 	AutoJumpbug(pLocal, pCmd);
 	AutoStrafe(pLocal, pCmd);
 	AutoPeek(pLocal, pCmd);
@@ -26,7 +28,7 @@ void CMisc::RunPre(CTFPlayer* pLocal, CUserCmd* pCmd)
 	BreakJump(pLocal, pCmd);
 }
 
-void CMisc::RunPost(CTFPlayer* pLocal, CUserCmd* pCmd, bool pSendPacket)
+void CMisc::RunPost(CTFPlayer* pLocal, CUserCmd* pCmd)
 {
 	if (!pLocal->IsAlive() || pLocal->IsAGhost() || pLocal->m_MoveType() != MOVETYPE_WALK || pLocal->IsSwimming()
 		|| pLocal->InCond(TF_COND_SHIELD_CHARGE))
@@ -41,8 +43,6 @@ void CMisc::RunPost(CTFPlayer* pLocal, CUserCmd* pCmd, bool pSendPacket)
 		FastMovement(pLocal, pCmd);
 	}
 }
-
-
 
 void CMisc::AutoJump(CTFPlayer* pLocal, CUserCmd* pCmd)
 {
@@ -128,7 +128,6 @@ void CMisc::AutoStrafe(CTFPlayer* pLocal, CUserCmd* pCmd)
 			break;
 
 		float flForward = pCmd->forwardmove, flSide = pCmd->sidemove;
-
 		Vec3 vForward, vRight; Math::AngleVectors(pCmd->viewangles, &vForward, &vRight, nullptr);
 		vForward.Normalize2D(), vRight.Normalize2D();
 
@@ -203,7 +202,7 @@ void CMisc::AntiAFK(CTFPlayer* pLocal, CUserCmd* pCmd)
 {
 	static Timer tTimer = {};
 
-	if (pCmd->buttons & (IN_MOVELEFT | IN_MOVERIGHT | IN_FORWARD | IN_BACK) || !pLocal->IsAlive())
+	if (pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT) || !pLocal->IsAlive())
 		tTimer.Update();
 	else if (Vars::Misc::Automation::AntiAFK.Value && tTimer.Run(25.f))
 		pCmd->buttons |= IN_FORWARD;
@@ -275,39 +274,34 @@ void CMisc::TauntKartControl(CTFPlayer* pLocal, CUserCmd* pCmd)
 	}
 	else if (Vars::Misc::Automation::KartControl.Value && pLocal->InCond(TF_COND_HALLOWEEN_KART))
 	{
-		const bool bForward = pCmd->buttons & IN_FORWARD;
-		const bool bBack = pCmd->buttons & IN_BACK;
-		const bool bLeft = pCmd->buttons & IN_MOVELEFT;
-		const bool bRight = pCmd->buttons & IN_MOVERIGHT;
+		bool bChoke = I::ClientState->chokedcommands < 3 && F::Ticks.CanChoke();
+		float flForward = fabsf(pCmd->forwardmove), flSide = pCmd->sidemove * (!bChoke ? 0.f : pCmd->forwardmove < 0.f ? -1 : 1);
 
-		const bool flipVar = I::GlobalVars->tickcount % 2;
-		if (bForward && (!bLeft && !bRight || !flipVar))
-		{
-			pCmd->forwardmove = 450.f;
-			pCmd->viewangles.x = 0.f;
-		}
-		else if (bBack && (!bLeft && !bRight || !flipVar))
-		{
-			pCmd->forwardmove = 450.f;
-			pCmd->viewangles.x = 91.f;
-		}
-		else if (pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT))
-		{
-			if (flipVar || !F::Ticks.CanChoke())
-			{	// you could just do this if you didn't care about viewangles
-				Vec3 vMove = { pCmd->forwardmove, pCmd->sidemove, 0.f };
-				Vec3 vAngMoveReverse = Math::VectorAngles(vMove * -1.f);
-				pCmd->forwardmove = -vMove.Length();
-				pCmd->sidemove = 0.f;
-				pCmd->viewangles.y = fmodf(pCmd->viewangles.y - vAngMoveReverse.y, 360.f);
-				pCmd->viewangles.z = 270.f;
-				G::PSilentAngles = true;
-			}
-		}
-		else
-			pCmd->viewangles.x = 90.f;
+		Vec3 vForward, vRight; Math::AngleVectors(pCmd->viewangles, &vForward, &vRight, nullptr);
+		vForward.Normalize2D(), vRight.Normalize2D();
 
+		pCmd->viewangles.x = 90.f;
 		G::SilentAngles = true;
+
+		if (!(pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
+			return;
+
+		if (pCmd->forwardmove < 0.f)
+			pCmd->viewangles.x = 91.f;
+		else if (pCmd->forwardmove > 0.f || flSide)
+			pCmd->viewangles.x = 10.f;
+		pCmd->forwardmove = 0.f;
+
+		if (!flForward && !flSide)
+			return;
+
+		pCmd->forwardmove = 450.f;
+		if (flSide)
+		{
+			Vec3 vWishDir = Math::VectorAngles({ vForward.x * flForward + vRight.x * flSide, vForward.y * flForward + vRight.y * flSide, 0.f });
+			pCmd->viewangles.y = vWishDir.y;
+			G::PSilentAngles = true;
+		}
 	}
 }
 
@@ -339,10 +333,14 @@ void CMisc::FastMovement(CTFPlayer* pLocal, CUserCmd* pCmd)
 	{
 		if ((pLocal->IsDucking() ? !Vars::Misc::Movement::DuckSpeed.Value : !Vars::Misc::Movement::FastAccelerate.Value)
 			|| Vars::Misc::Game::AntiCheatCompatibility.Value
-			|| G::Attacking == 1 || F::Ticks.m_bDoubletap || F::Ticks.m_bSpeedhack || F::Ticks.m_bRecharge || G::AntiAim || I::GlobalVars->tickcount % 2)
+			|| G::Attacking == 1 || F::Ticks.m_bDoubletap || F::Ticks.m_bSpeedhack || F::Ticks.m_bRecharge || G::AntiAim)
 			return;
 
 		if (!(pCmd->buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
+			return;
+
+		bool bChoke = !I::ClientState->chokedcommands && F::Ticks.CanChoke();
+		if (!bChoke)
 			return;
 
 		Vec3 vMove = { pCmd->forwardmove, pCmd->sidemove, 0.f };
@@ -471,7 +469,7 @@ int CMisc::AntiBackstab(CTFPlayer* pLocal, CUserCmd* pCmd, bool bSendPacket)
 		vAngleTo.x = pCmd->viewangles.x;
 		SDK::FixMovement(pCmd, vAngleTo);
 		pCmd->viewangles = vAngleTo;
-		
+
 		return 1;
 	}
 	case Vars::Misc::Automation::AntiBackstabEnum::Pitch:
@@ -534,7 +532,7 @@ void CMisc::PingReducer()
 	int iTarget = Vars::Misc::Exploits::PingReducer.Value ? Vars::Misc::Exploits::PingTarget.Value : cl_cmdrate->GetInt();
 	if (m_iWishCmdrate != iTarget)
 	{
-		m_iWishCmdrate = iTarget;
+		m_iWishCmdrate = iTarget;	
 
 		auto pNetChan = reinterpret_cast<CNetChannel*>(I::EngineClient->GetNetChannelInfo());
 		if (pNetChan && I::EngineClient->IsConnected())
@@ -558,6 +556,92 @@ void CMisc::PingReducer()
 		}
 	}
 }
+
+// Auto Force-A-Nature (FaN) - Automatically shoots when double jumping as Scout
+void CMisc::AutoFaN(CUserCmd* pCmd)
+{
+	m_bFaNRunning = true;
+
+	if (!Vars::Misc::Movement::AutoFaN.Value)
+		return;
+
+	const auto pLocal = H::Entities.GetLocal();
+	const auto pWeapon = H::Entities.GetWeapon();
+	if (!pLocal || !pWeapon)
+		return;
+
+	if (pLocal->deadflag())
+		return;
+
+	if (pLocal->m_iClass() != TF_CLASS_SCOUT)
+		return;
+
+	if (pWeapon->m_iItemDefinitionIndex() != 45)
+		return;
+
+	// do NOT override manual input
+	if (pCmd->buttons & IN_ATTACK)
+		return;
+
+	const bool bOnGround = (pLocal->m_fFlags() & FL_ONGROUND);
+
+	// FaN jump happens RIGHT AFTER leaving ground
+	static bool bWasOnGround = false;
+
+	if (!bWasOnGround && !bOnGround)
+	{
+		bWasOnGround = false;
+		return;
+	}
+
+	if (bOnGround)
+	{
+		bWasOnGround = true;
+		return;
+	}
+
+	bWasOnGround = false;
+
+	Vec3 vel = pLocal->m_vecVelocity();
+	float speed = sqrtf(vel.x * vel.x + vel.y * vel.y);
+	if (speed < 200.f)
+		return;
+
+	bool f = pCmd->buttons & IN_FORWARD;
+	bool b = pCmd->buttons & IN_BACK;
+	bool l = pCmd->buttons & IN_MOVELEFT;
+	bool r = pCmd->buttons & IN_MOVERIGHT;
+
+	if (!f && !b && !l && !r)
+		return;
+
+	float yawOffset = 0.f;
+
+	if (f && !l && !r) yawOffset = 0.f;
+	else if (b && !l && !r) yawOffset = 180.f;
+	else if (l && !f && !b) yawOffset = 90.f;
+	else if (r && !f && !b) yawOffset = -90.f;
+	else if (f && l) yawOffset = 45.f;
+	else if (f && r) yawOffset = -45.f;
+	else if (b && l) yawOffset = 135.f;
+	else if (b && r) yawOffset = -135.f;
+	else return;
+
+	Vec3 ang = pCmd->viewangles;
+	ang.x = 65.f;
+	ang.y += yawOffset;
+
+	while (ang.y > 180.f) ang.y -= 360.f;
+	while (ang.y < -180.f) ang.y += 360.f;
+
+	m_bFaNRunning = true;
+
+	G::SilentAngles = true;
+	pCmd->viewangles = ang;
+
+	pCmd->buttons |= IN_ATTACK;
+}
+
 
 void CMisc::UnlockAchievements()
 {

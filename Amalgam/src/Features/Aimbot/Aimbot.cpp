@@ -42,6 +42,9 @@ void CAimbot::RunAimbot(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCm
 
 void CAimbot::RunMain(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd)
 {
+	if (F::Misc.m_bFaNRunning)
+		return;
+
 	if (F::AimbotProjectile.m_iLastTickCancel)
 	{
 		pCmd->weaponselect = F::AimbotProjectile.m_iLastTickCancel;

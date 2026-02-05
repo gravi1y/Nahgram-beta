@@ -1,7 +1,7 @@
 #include "../SDK/SDK.h"
 
 #include "../Features/Backtrack/Backtrack.h"
-#include "../Features/NoSpread/NoSpreadHitscan/NoSpreadHitscan.h"
+#include "../Features/NoSpread/NoSpreadProjectile/NoSpreadProjectile.h"
 #include "../Features/Resolver/Resolver.h"
 
 MAKE_SIGNATURE(FX_FireBullets, "client.dll", "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", 0x0);
@@ -20,8 +20,8 @@ MAKE_HOOK(FX_FireBullets, S::FX_FireBullets(), void,
 
 	if (iPlayer != I::EngineClient->GetLocalPlayer())
 		F::Backtrack.ReportShot(iPlayer);
-	else if (Vars::Aimbot::General::NoSpread.Value && dwRetAddr == dwDesired)
-		iSeed = F::NoSpreadHitscan.m_iSeed;
+	else if (Vars::Aimbot::Projectile::NoSpread.Value && dwRetAddr == dwDesired)
+		iSeed = F::NoSpreadProjectile.m_iSeed;
 
 	return CALL_ORIGINAL(pWpn, iPlayer, vecOrigin, vecAngles, iWeapon, iMode, iSeed, flSpread, flDamage, bCritical);
 }
@@ -38,7 +38,7 @@ MAKE_HOOK(FX_FireBullets_Server, S::FX_FireBullets_Server(), void,
 		return CALL_ORIGINAL(pWpn, iPlayer, vecOrigin, vecAngles, iWeapon, iMode, iSeed, flSpread, flDamage, bCritical);
 #endif
 
-	if (Vars::Aimbot::General::NoSpread.Value)
+	if (Vars::Aimbot::Projectile::NoSpread.Value)
 		SDK::Output("FX_FireBullets", std::format("{}", iSeed).c_str(), { 0, 255, 0 });
 	return CALL_ORIGINAL(pWpn, iPlayer, vecOrigin, vecAngles, iWeapon, iMode, iSeed, flSpread, flDamage, bCritical);
 }

@@ -57,7 +57,7 @@ void CAntiAim::FakeShotAngles(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCm
 	}
 
 	G::SilentAngles = true;
-	if (!Vars::Aimbot::General::NoSpread.Value)
+	if (!Vars::Aimbot::Projectile::NoSpread.Value)
 	{	// messes with nospread accuracy
 		pCmd->viewangles.x = 180 - pCmd->viewangles.x;
 		pCmd->viewangles.y += 180;

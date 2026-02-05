@@ -12,6 +12,7 @@ private:
 	void AntiAFK(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void InstantRespawnMVM(CTFPlayer* pLocal);
 	void NoisemakerSpam(CTFPlayer* pLocal);
+	void AutoFaN(CUserCmd* pCmd);
 
 	void CheatsBypass();
 	void WeaponSway();
@@ -22,14 +23,21 @@ private:
 	void AutoPeek(CTFPlayer* pLocal, CUserCmd* pCmd, bool bPost = false);
 	void EdgeJump(CTFPlayer* pLocal, CUserCmd* pCmd, bool bPost = false);
 
+	// Check if auto FaN is currently running
+	bool m_bRJDisableFakeLag = true;
+
 	bool m_bPeekPlaced = false;
 	Vec3 m_vPeekReturnPos = {};
 
 	//bool bSteamCleared = false;
 
+
 public:
 	void RunPre(CTFPlayer* pLocal, CUserCmd* pCmd);
-	void RunPost(CTFPlayer* pLocal, CUserCmd* pCmd, bool pSendPacket);
+	void RunPost(CTFPlayer* pLocal, CUserCmd* pCmd);
+
+	// Whether the Auto FaN routine is running this tick
+	bool m_bFaNRunning = false;
 
 	void Event(IGameEvent* pEvent, uint32_t uNameHash);
 	int AntiBackstab(CTFPlayer* pLocal, CUserCmd* pCmd, bool bSendPacket);

@@ -15,117 +15,85 @@ void CMenu::DrawMenu()
 {
 	using namespace ImGui;
 
-	static bool bSetPosition = false;
-	if (!bSetPosition)
+	const ImVec2 TabSize = { 150.f, 60.f };
+	const ImVec2 SubTabSize = { 150.f, 30.f };
+
+	static int CurrentTab = 0;
+	static int CurrentAimbotTab = 0;
+	static int CurrentVisualsTab = 0;
+	static int CurrentConfigTab = 0;
+
+	SetNextWindowSize({ 750, 500 }, ImGuiCond_FirstUseEver);
+	PushStyleVar(ImGuiStyleVar_WindowMinSize, { 750, 500 });
+
+	if (Begin("MainWindow", nullptr,
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoTitleBar))
 	{
-		SetNextWindowPos((GetIO().DisplaySize - ImVec2(H::Draw.Scale(750), H::Draw.Scale(500))) / 2, ImGuiCond_FirstUseEver);
-		SetNextWindowSize({ H::Draw.Scale(750), H::Draw.Scale(500) }, ImGuiCond_FirstUseEver);
-		bSetPosition = true;
-	}
+		ImVec2 winSize = GetWindowSize();
 
-	PushStyleVar(ImGuiStyleVar_WindowMinSize, { H::Draw.Scale(750), H::Draw.Scale(500) });
-	if (Begin("Main", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground))
-	{
-		ImVec2 vWindowPos = GetWindowPos();
-		ImVec2 vWindowSize = GetWindowSize();
-		float flSideSize = 140.f;
+		BeginChild("Sidebar", { TabSize.x, winSize.y }, false);
 
-		PushClipRect({ 0, 0 }, { ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y }, false);
-		RenderTwoToneBackground(H::Draw.Scale(flSideSize), F::Render.Background0, F::Render.Background1, F::Render.Background2, 0.f, false);
-		PopClipRect();
-
-		ImVec2 vDrawPos = GetDrawPos();
-		auto pDrawList = GetWindowDrawList();
-		
-		float flOffset = 0.f;
-		Bind_t tBind;
-		if (!F::Binds.GetBind(CurrentBind, &tBind))
-			CurrentBind = DEFAULT_BIND;
-
-		if (CurrentBind != DEFAULT_BIND) // bind
-		{
-			flOffset = H::Draw.Scale(60);
-			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(59) }, { vDrawPos.x + H::Draw.Scale(flSideSize - 1), vDrawPos.y + H::Draw.Scale(60) }, F::Render.Background2);
-
-			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(11) });
-			FText("Editing bind", 0, F::Render.FontRegular);
-			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(35) });
-			PushStyleColor(ImGuiCol_Text, F::Render.Accent.Value);
-			FText(TruncateText(tBind.m_sName, H::Draw.Scale(flSideSize - 28)).c_str(), 0, F::Render.FontRegular);
-			PopStyleColor();
-
-			SetCursorPos({ H::Draw.Scale(flSideSize - 31), H::Draw.Scale(6) });
-			if (IconButton(ICON_MD_CANCEL))
-				CurrentBind = DEFAULT_BIND;
-		}
-		else if (!Vars::Menu::CheatTitle.Value.empty()) // title
-		{
-			flOffset = H::Draw.Scale(36);
-			pDrawList->AddRectFilled({ vDrawPos.x, vDrawPos.y + H::Draw.Scale(35) }, { vDrawPos.x + H::Draw.Scale(flSideSize - 1), vDrawPos.y + H::Draw.Scale(36) }, F::Render.Background2);
-			
-			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(11) });
-			PushStyleColor(ImGuiCol_Text, F::Render.Accent.Value);
-			FText(TruncateText(Vars::Menu::CheatTitle.Value, H::Draw.Scale(flSideSize - 28), F::Render.FontBold).c_str(), 0, F::Render.FontBold);
-			PopStyleColor();
-		}
-
-		static int iTab = 0, iAimbotTab = 0, iVisualsTab = 0, iMiscTab = 0, iLogsTab = 0, iSettingsTab = 0;
-		PushFont(F::Render.FontBold);
-		FTabs(
+		auto IconTab = [&](const char* icon, const char* text, int id)
 			{
-				{ "AIMBOT", "GENERAL", "DRAW" },
-				{ "VISUALS", "ESP", "MISC##", "MENU" },
-				{ "MISC", "MAIN", "HVH" },
-				{ "LOGS", "PLAYERLIST", "SETTINGS##", "OUTPUT" },
-				{ "SETTINGS", "CONFIG", "BINDS", "MATERIALS", "EXTRA" }
-			},
-			{ &iTab, &iAimbotTab, &iVisualsTab, &iMiscTab, &iLogsTab, &iSettingsTab },
-			{ H::Draw.Scale(flSideSize - 16), H::Draw.Scale(36) },
-			{ H::Draw.Scale(8), H::Draw.Scale(8) + flOffset },
-			FTabsEnum::Vertical | FTabsEnum::HorizontalIcons | FTabsEnum::AlignLeft | FTabsEnum::BarLeft,
-			{ { ICON_MD_PERSON }, { ICON_MD_VISIBILITY }, { ICON_MD_ARTICLE }, { ICON_MD_IMPORT_CONTACTS }, { ICON_MD_SETTINGS } },
-			{ H::Draw.Scale(10), 0 }, {},
-			{}, { H::Draw.Scale(22), 0 }
-		);
-		PopFont();
+				bool active = (CurrentTab == id);
+				ImVec2 p = GetCursorScreenPos();
+				ImVec2 s = TabSize;
 
-		static std::string sSearch = "";
-		SetCursorPos({ H::Draw.Scale(8), vWindowSize.y - H::Draw.Scale(37) });
-		FInputText("Search...", sSearch, H::Draw.Scale(123), ImGuiInputTextFlags_None);
-		bool bSearch = /*IsItemFocused() ||*/ !sSearch.empty();
-		if (!bSearch || FCalcTextSize(sSearch.c_str()).x < 86.f)
-		{
-			SetCursorPos({ H::Draw.Scale(109), vWindowSize.y - H::Draw.Scale(31) });
-			IconImage(ICON_MD_SEARCH);
-		}
-		if (bSearch && IsMouseReleased(ImGuiMouseButton_Left) && IsMouseWithin(vDrawPos.x, vDrawPos.y, H::Draw.Scale(140), vWindowSize.y - H::Draw.Scale(45)))
-			sSearch = "";
+				InvisibleButton(text, s);
+				if (IsItemClicked()) CurrentTab = id;
 
-		SetCursorPos({ H::Draw.Scale(flSideSize), 0 });
-		PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-		PushStyleVar(ImGuiStyleVar_WindowPadding, { H::Draw.Scale(8), H::Draw.Scale(8) });
-		if (BeginChild("Page", { vWindowSize.x - H::Draw.Scale(flSideSize), vWindowSize.y }, ImGuiChildFlags_AlwaysUseWindowPadding))
+				ImU32 bg = active ? IM_COL32(60, 60, 70, 255) : IM_COL32(30, 30, 35, 255);
+				GetWindowDrawList()->AddRectFilled(p, { p.x + s.x, p.y + s.y }, bg, 6.f);
+
+				ImVec2 iconSz = CalcTextSize(icon);
+				ImVec2 textSz = CalcTextSize(text);
+
+				GetWindowDrawList()->AddText(
+					{ p.x + (s.x - iconSz.x) * 0.5f, p.y + 6.f },
+					IM_COL32_WHITE, icon
+				);
+
+				GetWindowDrawList()->AddText(
+					{ p.x + (s.x - textSz.x) * 0.5f, p.y + s.y - textSz.y - 6.f },
+					IM_COL32(200, 200, 200, 255), text
+				);
+			};
+
+		IconTab(ICON_MD_PERSON, "AIMBOT", 0);
+		IconTab(ICON_MD_VISIBILITY, "VISUALS", 1);
+		IconTab(ICON_MD_ARTICLE, "MISC", 2);
+		IconTab(ICON_MD_IMPORT_CONTACTS, "LOGS", 3);
+		IconTab(ICON_MD_SETTINGS, "SETTINGS", 4);
+
+		EndChild();
+
+		SetCursorPos({ TabSize.x, SubTabSize.y });
+		PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.f, 8.f });
+
+		if (BeginChild("Content",
+			{ winSize.x - TabSize.x, winSize.y - SubTabSize.y },
+			ImGuiChildFlags_AlwaysUseWindowPadding))
 		{
-			if (!bSearch)
+			switch (CurrentTab)
 			{
-				switch (iTab)
-				{
-				case 0: MenuAimbot(iAimbotTab); break;
-				case 1: MenuVisuals(iVisualsTab); break;
-				case 2: MenuMisc(iMiscTab); break;
-				case 3: MenuLogs(iLogsTab); break;
-				case 4: MenuSettings(iSettingsTab); break;
-				}
+			case 0: MenuAimbot(CurrentTab); break;
+			case 1: MenuVisuals(CurrentTab); break;
+			case 2: MenuMisc(CurrentTab); break;
+			case 3: MenuLogs(CurrentTab); break;
+			case 4: MenuSettings(CurrentTab); break;
 			}
-			else
-				MenuSearch(sSearch);
-		} EndChild();
-		PopStyleVar(2);
+		}
+		EndChild();
 
+		PopStyleVar();
 		End();
 	}
+
 	PopStyleVar();
 }
+
 
 #pragma region Tabs
 void CMenu::MenuAimbot(int iTab)
@@ -167,7 +135,6 @@ void CMenu::MenuAimbot(int iTab)
 					FToggle(Vars::CritHack::ForceCrits, FToggleEnum::Left);
 					FToggle(Vars::CritHack::AvoidRandomCrits, FToggleEnum::Right);
 					FToggle(Vars::CritHack::AlwaysMeleeCrit, FToggleEnum::Left);
-					FToggle(Vars::Aimbot::General::NoSpread, FToggleEnum::Right);
 				} EndSection();
 				if (Vars::Debug::Options.Value)
 				{
@@ -259,6 +226,7 @@ void CMenu::MenuAimbot(int iTab)
 					PushTransparent(!Vars::Aimbot::Projectile::AutoRelease.Value);
 					{
 						FSlider(Vars::Aimbot::Projectile::AutoRelease);
+						FToggle(Vars::Aimbot::Projectile::NoSpread, FToggleEnum::Left);
 					}
 					PopTransparent();
 				} EndSection();
@@ -1010,6 +978,7 @@ void CMenu::MenuMisc(int iTab)
 					FToggle(Vars::Misc::Movement::MovementLock, FToggleEnum::Right);
 					FToggle(Vars::Misc::Movement::BreakJump, FToggleEnum::Left);
 					FToggle(Vars::Misc::Movement::ShieldTurnRate, FToggleEnum::Right);
+					FToggle(Vars::Misc::Movement::AutoFaN, FToggleEnum::Left);
 				} EndSection();
 				if (Vars::Debug::Options.Value)
 				{
@@ -1905,7 +1874,7 @@ void CMenu::MenuLogs(int iTab)
 						fStream.close();
 
 						SDK::SetClipboard(sString);
-						SDK::Output("Amalgam", "Copied playerlist to clipboard", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+						SDK::Output("Nahgram", "Copied playerlist to clipboard", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 				}
 
@@ -2006,7 +1975,7 @@ void CMenu::MenuLogs(int iTab)
 						}
 						catch (...)
 						{
-							SDK::Output("Amalgam", "Failed to import playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+							SDK::Output("Nahgram", "Failed to import playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 						}
 					}
 
@@ -2067,7 +2036,7 @@ void CMenu::MenuLogs(int iTab)
 							}
 
 							F::PlayerUtils.m_bSave = true;
-							SDK::Output("Amalgam", "Imported playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+							SDK::Output("Nahgram", "Imported playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 
 							CloseCurrentPopup();
 						}
@@ -2098,11 +2067,11 @@ void CMenu::MenuLogs(int iTab)
 							F::Configs.m_sCorePath + std::format("Backup{}.json", iBackupCount + 1),
 							std::filesystem::copy_options::overwrite_existing
 						);
-						SDK::Output("Amalgam", "Saved backup playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+						SDK::Output("Nahgram", "Saved backup playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 					catch (...)
 					{
-						SDK::Output("Amalgam", "Failed to backup playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
+						SDK::Output("Nahgram", "Failed to backup playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 				}
 			}
@@ -3565,50 +3534,53 @@ void CMenu::DrawBinds()
 	if (tDragBox != tOld)
 		SetNextWindowPos({ float(tDragBox.x), float(tDragBox.y) }, ImGuiCond_Always);
 
-    float flKindWidth = 0, flNameWidth = 0, flValueWidth = 0, flStatusWidth = 0;
-    PushFont(F::Render.FontSmall);
-    for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
-    {
-        flKindWidth = std::max(flKindWidth, FCalcTextSize(sInfo.c_str()).x);
-        flNameWidth = std::max(flNameWidth, FCalcTextSize(sName).x);
-        flValueWidth = std::max(flValueWidth, FCalcTextSize(sState.c_str()).x);
+	float flKindWidth = 0, flNameWidth = 0, flValueWidth = 0, flStatusWidth = 0;
+	PushFont(F::Render.FontSmall);
+	for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
+	{
+		flKindWidth = std::max(flKindWidth, FCalcTextSize(sInfo.c_str()).x);
+		flNameWidth = std::max(flNameWidth, FCalcTextSize(sName).x);
+		flValueWidth = std::max(flValueWidth, FCalcTextSize(sState.c_str()).x);
 
-        std::string sDisplayState;
-        if (!tBind.m_vVars.empty())
-        {
-            auto* pVar = tBind.m_vVars.front();
-            if (auto pBool = pVar->As<bool>())
-                sDisplayState = pBool->Value ? "On" : "Off";
-            else if (auto pStr = pVar->As<std::string>())
-                sDisplayState = std::format("{}", pStr->Value);
-            else if (auto pInt = pVar->As<int>())
-            {
-                if (!pVar->m_vValues.empty())
-                {
-                    int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
-                    sDisplayState = pVar->m_vValues[idx];
-                }
-            }
-        }
-        flStatusWidth = std::max(flStatusWidth, FCalcTextSize(sDisplayState.c_str()).x);
-    }
-    PopFont();
-    flKindWidth += H::Draw.Scale(9);
-    flNameWidth += H::Draw.Scale(9);
-    flValueWidth += H::Draw.Scale(9);
-    flStatusWidth += H::Draw.Scale(9);
+		std::string sDisplayState;
+		if (!tBind.m_vVars.empty())
+		{
+			auto* pVar = tBind.m_vVars.front();
+			if (auto pBool = pVar->As<bool>())
+				sDisplayState = pBool->Value ? "On" : "Off";
+			else if (auto pStr = pVar->As<std::string>())
+				sDisplayState = std::format("{}", pStr->Value);
+			else if (auto pInt = pVar->As<int>())
+			{
+				if (!pVar->m_vValues.empty())
+				{
+					int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
+					sDisplayState = pVar->m_vValues[idx];
+				}
+			}
+		}
+		flStatusWidth = std::max(flStatusWidth, FCalcTextSize(sDisplayState.c_str()).x);
+	}
+	PopFont();
 
-    float flWidth = flKindWidth + flNameWidth + flValueWidth + flStatusWidth + (m_bIsOpen ? H::Draw.Scale(113) : H::Draw.Scale(14));
+	flKindWidth += H::Draw.Scale(9);
+	flNameWidth += H::Draw.Scale(9);
+	flValueWidth += H::Draw.Scale(9);
+	flStatusWidth += H::Draw.Scale(9);
+
+	float flWidth = flKindWidth + flNameWidth + flValueWidth + flStatusWidth + (m_bIsOpen ? H::Draw.Scale(113) : H::Draw.Scale(14));
 	float flHeight = H::Draw.Scale(18 * vInfo.size() + (Vars::Menu::BindWindowTitle.Value ? 42 : 12));
 	SetNextWindowSize({ flWidth, flHeight });
+
 	PushStyleVar(ImGuiStyleVar_WindowMinSize, { H::Draw.Scale(40), H::Draw.Scale(40) });
 	if (Begin("Binds", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing))
 	{
 		ImVec2 vWindowPos = GetWindowPos();
-
 		RenderBackground(F::Render.Background0p5, F::Render.Background2);
 
-		tDragBox.x = vWindowPos.x; tDragBox.y = vWindowPos.y; tOld = tDragBox;
+		tDragBox.x = vWindowPos.x;
+		tDragBox.y = vWindowPos.y;
+		tOld = tDragBox;
 		if (m_bIsOpen)
 			FSet(Vars::Menu::BindsDisplay, tDragBox);
 
@@ -3621,70 +3593,64 @@ void CMenu::DrawBinds()
 			PopFont();
 
 			auto pDrawList = GetWindowDrawList();
-        float x0 = vWindowPos.x + H::Draw.Scale(7);
-        float x1 = vWindowPos.x + GetWindowSize().x - H::Draw.Scale(7);
-        float y  = vWindowPos.y + H::Draw.Scale(28);
-        pDrawList->AddRectFilled({ x0, y }, { x1, y + H::Draw.Scale(1) }, F::Render.Accent);
+			float x0 = vWindowPos.x + H::Draw.Scale(7);
+			float x1 = vWindowPos.x + GetWindowSize().x - H::Draw.Scale(7);
+			float y = vWindowPos.y + H::Draw.Scale(28);
+			pDrawList->AddRectFilled({ x0, y }, { x1, y + H::Draw.Scale(1) }, F::Render.Accent);
 
 			iListStart = 36;
 		}
 
 		PushFont(F::Render.FontSmall);
-		int i = 0; for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
+		int i = 0;
+		for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
 		{
 			float flPosX = 0;
 
 			if (m_bIsOpen)
 				PushTransparent(!F::Binds.WillBeEnabled(iBind), true);
 
-        SetCursorPos({ flPosX += H::Draw.Scale(12), H::Draw.Scale(iListStart + 18 * i) });
-        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
-        FText(sInfo.c_str());
-        PopStyleColor();
+			SetCursorPos({ flPosX += H::Draw.Scale(12), H::Draw.Scale(iListStart + 18 * i) });
+			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
+			FText(sInfo.c_str());
+			PopStyleColor();
 
-        SetCursorPos({ flPosX += flKindWidth, H::Draw.Scale(iListStart + 18 * i) });
-        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
-        FText(sName);
-        PopStyleColor();
+			SetCursorPos({ flPosX += flKindWidth, H::Draw.Scale(iListStart + 18 * i) });
+			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
+			FText(sName);
+			PopStyleColor();
 
-        SetCursorPos({ flPosX += flNameWidth, H::Draw.Scale(iListStart + 18 * i) });
-        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
-        FText(sState.c_str());
-        PopStyleColor();
+			SetCursorPos({ flPosX += flNameWidth, H::Draw.Scale(iListStart + 18 * i) });
+			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
+			FText(sState.c_str());
+			PopStyleColor();
 
-        std::string sDisplayState = sState;
-        if (!tBind.m_vVars.empty())
-        {
-            auto* pVar = tBind.m_vVars.front();
-            if (auto pBool = pVar->As<bool>())
-                sDisplayState = pBool->Value ? "On" : "Off";
-            else if (auto pStr = pVar->As<std::string>())
-                sDisplayState = pStr->Value;
-            else if (auto pInt = pVar->As<int>())
-            {
-                if (!pVar->m_vValues.empty())
-                {
-                    int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
-                    sDisplayState = pVar->m_vValues[idx];
-                }
-                else
-                {
-                    if (pVar->m_sName.find("Backtrack::Latency") != std::string::npos)
-                    {
-                        int val = pInt->Value;
-                        if (val == 0)
-                            val = Vars::Backtrack::Window.Value;
-                        sDisplayState = std::format("{} ms", val);
-                    }
-                    else if (pVar->m_sName.find("Backtrack::Window") != std::string::npos)
-                    {
-                        sDisplayState = std::format("{} ms", pInt->Value);
-                    }
-                    else
-                        sDisplayState = std::format("{}", pInt->Value);
-                }
-            }
-        }
+			std::string sDisplayState = sState;
+			if (!tBind.m_vVars.empty())
+			{
+				auto* pVar = tBind.m_vVars.front();
+				if (auto pBool = pVar->As<bool>())
+					sDisplayState = pBool->Value ? "On" : "Off";
+				else if (auto pStr = pVar->As<std::string>())
+					sDisplayState = pStr->Value;
+				else if (auto pInt = pVar->As<int>())
+				{
+					if (!pVar->m_vValues.empty())
+					{
+						int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
+						sDisplayState = pVar->m_vValues[idx];
+					}
+					else if (pVar->m_sName.find("Backtrack::Latency") != std::string::npos)
+					{
+						int val = pInt->Value ? pInt->Value : Vars::Backtrack::Window.Value;
+						sDisplayState = std::format("{} ms", val);
+					}
+					else if (pVar->m_sName.find("Backtrack::Window") != std::string::npos)
+						sDisplayState = std::format("{} ms", pInt->Value);
+					else
+						sDisplayState = std::format("{}", pInt->Value);
+				}
+			}
 
         SetCursorPos({ flPosX += flValueWidth, H::Draw.Scale(iListStart + 18 * i) });
         PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
